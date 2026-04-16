@@ -46,38 +46,42 @@ public class MainWindow extends JFrame implements ControlPanel.ControlPanelListe
         setVisible(true);
     }
     
-    private void initializeGame(int width, int height, int mines) {   	
-    	if(gamePanel != null) {
-    		getContentPane().removeAll();
-    	}
-    	    	
-    	board = new GameBoard(width, height, mines);
-    	
-    	int difficultyToUse = 0;
+    private void initializeGame(int width, int height, int mines) {
+        if(gamePanel != null) {
+            getContentPane().removeAll();
+        }
+
+        board = new GameBoard(width, height, mines);
+
+        int difficultyToUse = 0;
         if (controlPanel != null) {
             difficultyToUse = controlPanel.getCurrentDifficulty();
         }
-        
-    	controlPanel = new ControlPanel(board, this, difficultyToUse);
-    	setLayout (new BorderLayout());
-    	add(controlPanel, BorderLayout.NORTH);
-    	
-    	gamePanel = new JPanel(new GridLayout(height, width, 1, 1));
-    	gamePanel.setBackground(Color.DARK_GRAY);
-    	buttons = new JButton[height][width];
-    	initializeButtons();
-    	add(gamePanel, BorderLayout.CENTER);
-        
-//        pack();
+
+        controlPanel = new ControlPanel(board, this, difficultyToUse);
+        setLayout(new BorderLayout());
+        add(controlPanel, BorderLayout.NORTH);
+
+        gamePanel = new JPanel(new GridLayout(height, width, 1, 1));
+        gamePanel.setBackground(Color.DARK_GRAY);
+        buttons = new JButton[height][width];
+        initializeButtons();
+        add(gamePanel, BorderLayout.CENTER);
+
         setResizable(true);
         setLocationRelativeTo(null);
-        
-        int minW = 50 * width + 16;
-        int minH = 50 * height + controlPanel.getHeight() + 39;
+
+        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+        int maxCellW = (int)((screen.width * 0.7) / width);
+        int maxCellH = (int)((screen.height * 0.7) / height);
+        int startCell = Math.min(40, Math.min(maxCellW, maxCellH));
+        int minCell = 30;
+
+        int minW = minCell * width + 16;
+        int minH = minCell * height + controlPanel.getHeight() + 39;
         setMinimumSize(new Dimension(minW, minH));
-        int startCell = 50;
         setSize(startCell * width + 16, startCell * height + controlPanel.getHeight() + 39);
-        
+
         revalidate();
         repaint();
     }
@@ -116,15 +120,19 @@ public class MainWindow extends JFrame implements ControlPanel.ControlPanelListe
 
         int cellW = (panelSize.width - cols) / cols;
         int cellH = (panelSize.height - rows) / rows;
-        cellSize = Math.max(25, Math.min(cellW, cellH));
-        
-        int minSide = Math.min(cellW, cellH);
-        int fontSize = Math.max(6, (int)(minSide * 0.35));
+        cellSize = Math.min(cellW, cellH);
+
+        int fontSize = Math.max(4, (int)(cellSize * 0.35));
+        Font font = new Font("Arial", Font.BOLD, fontSize);
 
         for (int y = 0; y < rows; y++) {
             for (int x = 0; x < cols; x++) {
-                buttons[y][x].setFont(new Font("Arial", Font.BOLD, fontSize));
-                buttons[y][x].setPreferredSize(new Dimension(cellSize, cellSize));
+                JButton btn = buttons[y][x];
+                btn.setFont(font);
+                btn.setPreferredSize(new Dimension(cellSize, cellSize));
+                btn.setMargin(new Insets(0, 0, 0, 0));
+                btn.setBorder(BorderFactory.createEmptyBorder());
+                btn.setBorderPainted(false);
             }
         }
         revalidate();
@@ -166,43 +174,41 @@ public class MainWindow extends JFrame implements ControlPanel.ControlPanelListe
     
     private void updateButton(int x, int y) {
         JButton button = buttons[y][x];
-        Cell cell = board.getCell(x, y); 
+        Cell cell = board.getCell(x, y);
         
-        button.setOpaque(true);         
+        button.setOpaque(true);
         button.setBorderPainted(false);
+        button.setMargin(new Insets(0, 0, 0, 0));
+        
+        int fontSize = Math.max(12, (int)(cellSize * 0.5));
+        button.setFont(new Font("Arial", Font.BOLD, fontSize));
         
         if(cell.isOpen()) {
             if(cell.isMine()) {
-            	button.setText("X");
-            	button.setFont(new Font("Arial", Font.BOLD, (int)(cellSize * 0.3)));
+                button.setText("💣");
                 button.setBackground(Color.RED);
                 button.setForeground(Color.BLACK);
             } else {
                 int minesAround = cell.getMinesAround();
                 if(minesAround > 0) {
-                	button.setText(String.valueOf(minesAround));
-                	setNumberColor(button, minesAround);
+                    button.setText(String.valueOf(minesAround));
+                    setNumberColor(button, minesAround);
                 } else {
                     button.setText("");
                 }
                 button.setBackground(Color.LIGHT_GRAY);
             }
-            if (cell.isMine()) {
-                button.setForeground(Color.BLACK);
-            } else if (cell.getMinesAround() > 0) {
-                setNumberColor(button, cell.getMinesAround());
-            }
         } else if (cell.isFlag()) {
-        	button.setText("F");
-//        	button.setText("🚩");
+            button.setText("⚑");
             button.setBackground(Color.YELLOW);
             button.setForeground(Color.RED);
+            button.setFont(new Font("Arial", Font.BOLD, Math.max(14, fontSize)));
         } else {
             button.setText("");
             button.setBackground(new Color(200, 220, 255));
             button.setEnabled(true);
         }
-    }         
+    }
 
     private void setNumberColor(JButton button, int number) {
         Color color;
